@@ -264,32 +264,32 @@ The design of these steps is such that using the event status trigger is best. T
 Drag the event status trigger, the get event payload step and the Splunk HEC step onto the canvas and hook them up in order:
 
 <kbd>
-  <img src="/media/Flow1.png" width=300 />
+  <img src="/media/Flow1.png" width=400 />
 </kbd>
 
 Then double click on the get events step and drag in the inputs like so:
 
 <kbd>
-  <img src="/media/Flow-setup1.png" width=500 />
+  <img src="/media/Flow-setup1.png" width=600 />
 </kbd>
 
 On the endpoint tab, select the xMatters endpoint
 
 <kbd>
-  <img src="/media/Flow-setup2.png" width=500 />
+  <img src="/media/Flow-setup2.png" width=600 />
 </kbd>
 
 
 Then, double click on the Splunk HEC step and map the inputs, pulling the token from the Constants section and the eventJSON from the Get Event Payload step like so:
 
 <kbd>
-  <img src="/media/Flow-setup3.png" width=500 />
+  <img src="/media/Flow-setup3.png" width=600 />
 </kbd>
 
 On the Run Location tab, make the appropriate selection depending on how xMatters will access your Splunk environment. If you are running Splunk in the cloud or have an open firewall connection, then select Cloud. Otherwise, select an xMatters Agent that will have access to Splunk. 
 
 <kbd>
-  <img src="/media/Flow-setup3.5.png" width=500 />
+  <img src="/media/Flow-setup3.5.png" width=600 />
 </kbd>
 
 
