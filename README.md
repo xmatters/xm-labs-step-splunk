@@ -3,8 +3,9 @@ This step ships event data to the HTTP Event Collector in Splunk, enabling compl
 Using the data sent from xMatters, you can build dashboards such as this one:
 
 <kbd>
-  <img src="/media/Dashboard.png" width=500 />
+  <img src="/media/Dashboard.png" />
 </kbd>
+
 [Source](xMattersDashboard.xml)
 
 
@@ -18,8 +19,8 @@ Using the data sent from xMatters, you can build dashboards such as this one:
 
 # Files
 
-* [logo.png](/media/hat.png) - Logo for the Hat Factory
-* [otherfile.file](/otherfile.file) - Some other file that does something useful.
+* [xMattersDashboard.xml](xMattersDashboard.xml) - Example dashboard XML file 
+* [SplunkLogo.png](SplunkLogo.png) - Logo for the Splunk step
 
 # Splunk Setup
 ## Create xMatters Source Type 
@@ -29,13 +30,13 @@ The source type is a way for Splunk to categorize and format the data being inge
 Login to Splunk and click the Settings menu in the upper left, then head over to the Source Types. 
 
 <kbd>
-  <img src="/media/SourceType.png" width=500 />
+  <img src="/media/SourceType.png"  />
 </kbd>
 
 Create a new Source Type called `xmatters_events`, give it a description and hit Save.
 
 <kbd>
-  <img src="/media/SourceType1.png" width=500 />
+  <img src="/media/SourceType1.png" width=600 />
 </kbd>
 
 
@@ -48,19 +49,19 @@ This step may or may not be needed in a customer environment as they might have 
 Click the Splunk logo again and click Data inputs.  
 
 <kbd>
-  <img src="/media/DataInputs.png" width=500 />
+  <img src="/media/DataInputs.png" />
 </kbd>
 
 Splunk shows us all the different modes it can ingest data which are cool, but we want HTTP. We need to make sure it is enabled, so click the **HTTP Event Collector**: 
 
 <kbd>
-  <img src="/media/HECInput.png" width=500 />
+  <img src="/media/HECInput.png" width=600 />
 </kbd>
     
 And if you see an angry badge, it indicates the Collector is disabled globally. This can be cleared up by clicking the Global Settings button which conveniently shows the Global Settings dialog. Click the Enabled toggle to enable the HTTP collector and then click Save.  
 
 <kbd>
-  <img src="/media/GlobalSettings.png" width=500 />
+  <img src="/media/GlobalSettings.png" width=600 />
 </kbd>
 
 
@@ -69,42 +70,45 @@ And if you see an angry badge, it indicates the Collector is disabled globally. 
 Now, we need to actually add the Collector, so click the **Add new** link next to HTTP Event Collector list.  
 
 <kbd>
-  <img src="/media/HECInput.png" width=500 />
+  <img src="/media/HECInput.png" width=600 />
 </kbd>
 
 The wizard will walk you through the setup.
 
 <kbd>
-  <img src="/media/HECWiz1.png" width=500 />
+  <img src="/media/HECWiz1.png" width=600 />
 </kbd>  
 
 Select the `xmatters_events` source type we created before in the Input Settings dialog 
 
 <kbd>
-  <img src="/media/HECWiz2.png" width=500 />
+  <img src="/media/HECWiz2.png" width=600 />
 </kbd>
 
 Review and Submit. A token value will be displayed. Copy this value with care, it is a password.
 
 <kbd>
-  <img src="/media/HECWiz4.png" width=500 />
+  <img src="/media/HECWiz4.png" width=600 />
 </kbd>
 
 ## Create Dashboard (optional)
 This step is for creating the default dashboard that can serve as an example on how to query for the Splunk data. 
 Navigate over to the Search & Reporting App in Splunk. Then find the Dashboards button and click Create New Dashboard
+
 <kbd>
-  <img src="/media/NewDashboard.png" width=500 />
+  <img src="/media/NewDashboard.png" width=600 />
 </kbd>
+
 Give it a good name and a description. Seriously, all your friends will thank you. Especially if you share the dashboard with them. 
 
 <kbd>
   <img src="/media/NewDashboard1.png" width=500 />
 </kbd>
-There is a helpful wizard for adding panels and such, but I took care of that for you. So just click the Source button, remove all the text there and paste in the [SplunkDashboard.xml](xMattersDashboard.xml) file. 
+
+There is a helpful wizard for adding panels and such, but I took care of that for you. So just click the Source button, remove all the text there and paste in the [xMattersDashboard.xml](xMattersDashboard.xml) file. 
 
 <kbd>
-  <img src="/media/DashboardSource.png" width=500 />
+  <img src="/media/DashboardSource.png" width=600 />
 </kbd>
 
 Clicking the Save button will execute the searches and display the results which will all be empty for now because we haven't added any data.  
@@ -122,7 +126,7 @@ The triggers don’t have all the data we want to send to Splunk, so we’re goi
 In the canvas, click Create a custom action and give it a useful name like **GET event payload**. Add the rest of the details like below. Note that we’ll be using the xMatters endpoint, which is marked as No Authentication in the backend apparently. 
 
 <kbd>
-  <img src="/media/GetEventPayload1.png" width=500 />
+  <img src="/media/GetEventPayload1.png" width=600 />
 </kbd>
 
 ### Inputs
@@ -189,7 +193,7 @@ This step is where we get to actually send the data out to Splunk. Create a new 
 Splunk Logo available [here](SplunkLogo.png)
 
 <kbd>
-  <img src="/media/SplunkSettings.png" width=500 />
+  <img src="/media/SplunkSettings.png" width=600 />
 </kbd>
 
 
@@ -199,7 +203,7 @@ Splunk Logo available [here](SplunkLogo.png)
 | ----- | ----------| --- | --- | --------- | ------------- | --------- |
 | HEC Token | Yes | 0 | 2000 | The token for authenticating into the Splunk HTTP Event Collector | | |
 | Source Type | Yes | 0 | 2000 | The name of the Splunk source type for this data. | xmatters_events |
-| eventJSON | 0 | 20000 | A string of the JSON response to the GET /event/UUID XMAPI call. | | |
+| eventJSON | | 0 | 20000 | A string of the JSON response to the GET /event/UUID XMAPI call. | | |
 
 
 
@@ -235,6 +239,8 @@ var data = {
 
 // Fire in the hole!
 var response = request.write( data );
+
+output['Splunk Response'] = response.statusCode;
 
 
 ```
