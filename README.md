@@ -1,5 +1,12 @@
 # xM Labs Send to Splunk Step
 This step ships event data to the HTTP Event Collector in Splunk, enabling complex reporting, dashboarding and analysis of events in xMatters. 
+Using the data sent from xMatters, you can build dashboards such as this one:
+
+<kbd>
+  <img src="/media/Dashboard.png" />
+</kbd>
+[Source](xMattersDashboard.xml)
+
 
 ---------
 
@@ -83,90 +90,107 @@ Review and Submit. A token value will be displayed. Copy this value with care, i
   <img src="/media/HECWiz4.png" />
 </kbd>
 
+## Create Dashboard (optional)
+This step is for creating the default dashboard that can serve as an example on how to query for the Splunk data. 
+Navigate over to the Search & Reporting App in Splunk. Then find the Dashboards button and click Create New Dashboard
+<kbd>
+  <img src="/media/NewDashboard.png" />
+</kbd>
+Give it a good name and a description. Seriously, all your friends will thank you. Especially if you share the dashboard with them. 
+
+<kbd>
+  <img src="/media/NewDashboard1.png" />
+</kbd>
+There is a helpful wizard for adding panels and such, but I took care of that for you. So just click the Source button, remove all the text there and paste in the [SplunkDashboard.xml](xMattersDashboard.xml) file. 
+
+<kbd>
+  <img src="/media/DashboardSource.png" />
+</kbd>
+
+Clicking the Save button will execute the searches and display the results which will all be empty for now because we haven't added any data.  
+
 
 
 # Flow Designer Steps
 
-## Action Name 1
-The "Create App Record" step creates a record in the `APPLICATION_NAME` and such and such. 
+## GET event payload
 
 ### Settings
-Values for the settings tab. A screen shot is also acceptable. If you have a custom icon, please upload it into the `/media` folder and reference with `<kbd> <img src="/media/hat.png"></kbd>`. See below for the format of a table in markdown. 
 
-| Field | Value |
-| ----- | ----- |
-| Name | Create a Hat |
-| Description | Sends a create a hat request to the hat factory.  |
-| Icon | <kbd> <img src="/media/hat.png"></kbd> |
-| Include Endpoint | Yes |
-| Endpoint Type | Basic Auth |
-| Endpoint Label | Hat Factory |
+The triggers don’t have all the data we want to send to Splunk, so we’re going to use the xM API to get the event. So, we’ll create a step that accepts 1 input, the event UUID, and has 2 outputs, one for the JSON string of the event ready for dropping into Splunk and the other for a status code in case we wanted to catch a failure. 
 
+In the canvas, click Create a custom action and give it a useful name like **GET event payload**. Add the rest of the details like below. Note that we’ll be using the xMatters endpoint, which is marked as No Authentication in the backend apparently. 
 
+<kbd>
+  <img src="/media/GetEventPayload1.png" />
+</kbd>
 
 ### Inputs
-Inputs should be in the form of tables. The syntax looks like this in the markdown. The "content cells" do not have to line up, just make sure you have the right number of columns in each row. Required inputs must be at the top and please for the love of Pete, add some helpful text as to what the input is for or what it does. If the step only allows certain values, make sure to list them!
 
-```
-| Name  | Required? | Min | Max | Help Text | Default Value | Multiline |
-| ----- | ----------| --- | --- | --------- | ------------- | --------- |
-| Name  | Yes | 0 | 2000 | This is the color of the hat to create | Blue | No |
-| Color | No | 0 | 2000 | The major color of the hat. Possible values are Red, White, Blue | Blue | No |
-```
+Add an input for the eventID. The API accepts the UUID or the event ID, so we’ll just allow either. Note that nothing interesting will happen if we don’t pass this ID, so we mark it as required. 
+
 
 | Name  | Required? | Min | Max | Help Text | Default Value | Multiline |
 | ----- | ----------| --- | --- | --------- | ------------- | --------- |
-| Name  | Yes | 0 | 2000 | This is the color of the hat to create | Blue | No |
-| Color | No | 0 | 2000 | The major color of the hat. Possible values are Red, White, Blue | Blue | No |
-
+| eventID  | Yes | 0 | 2000 | The xMatters event ID or UUID to retrieve |  | No |
 
 ### Outputs
 
 | Name |
 | ---- |
-| Hat |
-| Link |
+| eventJSON |
+| statusCode |
 
 ### Script
+Remove the default script and paste in all of this:
 
 ```javascript
-// Retrieve the name and color values
-var name = input['Name'];
-var color = input['Color'];
 
-// Make the request
-var req = http.request({
-   "endpoint": "Hat Factory",
-   "path": "/hat",
-   "method": "POST",
-   "headers": {
-      "Content-Type": "application/json"
-   }
-});
+// Build the request object and grab the properties and recipients
+var request = http.request({ 
+     "endpoint": "xMatters",
+     "path": "/api/xm/1/events/" + input['eventID'] + "?embed=properties,recipients,responseOptions,annotations",
+     "method": "GET"
+ });
 
-var hatPayload = {
-   "name": name,
-   "color": color
-};
+var response = request.write();
 
-var resp = req.write( hatPayload );
+output['statusCode'] = response.statusCode;
+output['eventJSON']  = JSON.stringify( { "message": response.statusMessage } );
+
+if (response.statusCode == 200 ) {
+    json = JSON.parse(response.body);
+    console.log("Retrieved event: " + json.eventId + ". ID = " + json.id);
+    
+    eventJSON = JSON.parse( response.body );
+
+    // The audits endpoint has a timeline of all responses,
+    // not just the last one. 
+    request = http.request({ 
+        "endpoint": "xMatters",
+        "path": "/api/xm/1/audits?eventId=" + input['eventID'] + "&auditType=RESPONSE_RECEIVED",
+        "method": "GET"
+    });
+
+    response = request.write();
+    if( response.statusCode == 200 ){
+        eventJSON.audits = JSON.parse( response.body );
+    }
+    
+    output['eventJSON'] = JSON.stringify( eventJSON );
+}
 
 ```
 
 
-## Action Name 2
-The "Update App Record" step creates a record in the `APPLICATION_NAME` and such and such. 
+## Splunk HEC
+This step is where we get to actually send the data out to Splunk. Create a new custom step called “Splunk HEC” like below. The logo file is attached in the email as splunk-thumb.png. Note again we select No Authentication as the endpoint type, but in this case it is because the token used to authenticate will be passed as an input. 
 
-### Settings
+Splunk Logo [here](SplunkLogo.png)
+<kbd>
+  <img src="/media/SplunkSettings.png" />
+</kbd>
 
-| Field | Value |
-| ----- | ----- |
-| Name | Update a Hat |
-| Description | Sends an update a hat request to the hat factory.  |
-| Icon | <kbd> <img src="/media/hat.png"></kbd> |
-| Include Endpoint | Yes |
-| Endpoint Type | Basic Auth |
-| Endpoint Label | Hat Factory |
 
 ### Inputs
 
