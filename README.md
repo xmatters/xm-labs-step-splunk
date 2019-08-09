@@ -3,7 +3,7 @@ This step ships event data to the HTTP Event Collector in Splunk, enabling compl
 Using the data sent from xMatters, you can build dashboards such as this one:
 
 <kbd>
-  <img src="/media/Dashboard.png" />
+  <img src="/media/Dashboard.png" width=500 />
 </kbd>
 [Source](xMattersDashboard.xml)
 
@@ -29,13 +29,13 @@ The source type is a way for Splunk to categorize and format the data being inge
 Login to Splunk and click the Settings menu in the upper left, then head over to the Source Types. 
 
 <kbd>
-  <img src="/media/SourceType.png" />
+  <img src="/media/SourceType.png" width=500 />
 </kbd>
 
 Create a new Source Type called `xmatters_events`, give it a description and hit Save.
 
 <kbd>
-  <img src="/media/SourceType1.png" />
+  <img src="/media/SourceType1.png" width=500 />
 </kbd>
 
 
@@ -48,19 +48,19 @@ This step may or may not be needed in a customer environment as they might have 
 Click the Splunk logo again and click Data inputs.  
 
 <kbd>
-  <img src="/media/DataInputs.png">
+  <img src="/media/DataInputs.png" width=500 />
 </kbd>
 
 Splunk shows us all the different modes it can ingest data which are cool, but we want HTTP. We need to make sure it is enabled, so click the **HTTP Event Collector**: 
 
 <kbd>
-  <img src="/media/HECInput.png" />
+  <img src="/media/HECInput.png" width=500 />
 </kbd>
     
 And if you see an angry badge, it indicates the Collector is disabled globally. This can be cleared up by clicking the Global Settings button which conveniently shows the Global Settings dialog. Click the Enabled toggle to enable the HTTP collector and then click Save.  
 
 <kbd>
-  <img src="/media/GlobalSettings.png" />
+  <img src="/media/GlobalSettings.png" width=500 />
 </kbd>
 
 
@@ -69,42 +69,42 @@ And if you see an angry badge, it indicates the Collector is disabled globally. 
 Now, we need to actually add the Collector, so click the **Add new** link next to HTTP Event Collector list.  
 
 <kbd>
-  <img src="/media/HECInput.png" />
+  <img src="/media/HECInput.png" width=500 />
 </kbd>
 
 The wizard will walk you through the setup.
 
 <kbd>
-  <img src="/media/HECWiz1.png" />
+  <img src="/media/HECWiz1.png" width=500 />
 </kbd>  
 
 Select the `xmatters_events` source type we created before in the Input Settings dialog 
 
 <kbd>
-  <img src="/media/HECWiz2.png" />
+  <img src="/media/HECWiz2.png" width=500 />
 </kbd>
 
 Review and Submit. A token value will be displayed. Copy this value with care, it is a password.
 
 <kbd>
-  <img src="/media/HECWiz4.png" />
+  <img src="/media/HECWiz4.png" width=500 />
 </kbd>
 
 ## Create Dashboard (optional)
 This step is for creating the default dashboard that can serve as an example on how to query for the Splunk data. 
 Navigate over to the Search & Reporting App in Splunk. Then find the Dashboards button and click Create New Dashboard
 <kbd>
-  <img src="/media/NewDashboard.png" />
+  <img src="/media/NewDashboard.png" width=500 />
 </kbd>
 Give it a good name and a description. Seriously, all your friends will thank you. Especially if you share the dashboard with them. 
 
 <kbd>
-  <img src="/media/NewDashboard1.png" />
+  <img src="/media/NewDashboard1.png" width=500 />
 </kbd>
 There is a helpful wizard for adding panels and such, but I took care of that for you. So just click the Source button, remove all the text there and paste in the [SplunkDashboard.xml](xMattersDashboard.xml) file. 
 
 <kbd>
-  <img src="/media/DashboardSource.png" />
+  <img src="/media/DashboardSource.png" width=500 />
 </kbd>
 
 Clicking the Save button will execute the searches and display the results which will all be empty for now because we haven't added any data.  
@@ -122,7 +122,7 @@ The triggers don’t have all the data we want to send to Splunk, so we’re goi
 In the canvas, click Create a custom action and give it a useful name like **GET event payload**. Add the rest of the details like below. Note that we’ll be using the xMatters endpoint, which is marked as No Authentication in the backend apparently. 
 
 <kbd>
-  <img src="/media/GetEventPayload1.png" />
+  <img src="/media/GetEventPayload1.png" width=500 />
 </kbd>
 
 ### Inputs
@@ -184,11 +184,12 @@ if (response.statusCode == 200 ) {
 
 
 ## Splunk HEC
-This step is where we get to actually send the data out to Splunk. Create a new custom step called “Splunk HEC” like below. The logo file is attached in the email as splunk-thumb.png. Note again we select No Authentication as the endpoint type, but in this case it is because the token used to authenticate will be passed as an input. 
+This step is where we get to actually send the data out to Splunk. Create a new custom step called “Splunk HEC” like below. The logo file is attached in the email as splunk-thumb.png. Note again we select No Authentication as the endpoint type, but in this case it is because the token used to authenticate will be passed as an input. Also note that we select `Both` for the Run Location so that our users can execute this step in the Cloud or in an Agent depending on how xMatters will access Splunk.
 
-Splunk Logo [here](SplunkLogo.png)
+Splunk Logo available [here](SplunkLogo.png)
+
 <kbd>
-  <img src="/media/SplunkSettings.png" />
+  <img src="/media/SplunkSettings.png" width=500 />
 </kbd>
 
 
@@ -196,39 +197,100 @@ Splunk Logo [here](SplunkLogo.png)
 
 | Name  | Required? | Min | Max | Help Text | Default Value | Multiline |
 | ----- | ----------| --- | --- | --------- | ------------- | --------- |
-| Name  | Yes | 0 | 2000 | This is the color of the hat to create | Blue | No |
-| Color | No | 0 | 2000 | The major color of the hat. Possible values are Red, White, Blue | Blue | No |
+| HEC Token | Yes | 0 | 2000 | The token for authenticating into the Splunk HTTP Event Collector | | |
+| Source Type | Yes | 0 | 2000 | The name of the Splunk source type for this data. | xmatters_events |
+| eventJSON | 0 | 20000 | A string of the JSON response to the GET /event/UUID XMAPI call. | | |
+
 
 
 ### Outputs
 
 | Name |
 | ---- |
-| Hat |
-| Link |
+| Splunk Response |
 
 ### Script
 
 ```javascript
-// Retrieve the name and color values
-var name = input['Name'];
-var color = input['Color'];
 
-// Make the request
-var req = http.request({
-   "endpoint": "Hat Factory",
-   "path": "/hat",
-   "method": "POST",
-   "headers": {
-      "Content-Type": "application/json"
-   }
+// Build the Splunk request object. Note the Authorization header
+var request = http.request({ 
+    "endpoint": "Splunk",
+    "path": "/services/collector/event",
+    "method": "POST",
+    'headers': {
+        'Content-Type': 'application/json',
+        'Authorization': 'Splunk ' + input['HEC Token']
+    }
 });
 
-var hatPayload = {
-   "name": name,
-   "color": color
+// Grab the event payload
+var eventJSON = JSON.parse( input['eventJSON'] );
+
+// Build the Splunk payload and mark it with the sourcetype
+var data = {
+    "sourcetype": input['Source Type'],
+    "event":      eventJSON
 };
 
-var resp = req.write( hatPayload );
+// Fire in the hole!
+var response = request.write( data );
+
 
 ```
+
+
+# Constants
+Adding a constant to hold the token value means you don't have to type it in every time you want to use it. This way, you just drag the constant in as an input to the Splunk step. 
+Exit the flow designer and head over to the integration builder and click the **Edit Constants** button and paste in the value from above and hit **Save Changes**. 
+
+<kbd>
+  <img src="/media/Constant.png" width=500 />
+</kbd>
+
+# Usage
+The design of these steps is such that using the event status trigger is best. This will ensure you have the initial event data as soon as it happens, and then **all** of the response and notification data. Using other triggers may be possible depending on what information you need to get and when. 
+
+Drag the event status trigger, the get event payload step and the Splunk HEC step onto the canvas and hook them up in order:
+
+<kbd>
+  <img src="/media/Flow1.png" />
+</kbd>
+
+Then double click on the get events step and drag in the inputs like so:
+
+<kbd>
+  <img src="/media/Flow-setup1.png" width=300 />
+</kbd>
+
+On the endpoint tab, select the xMatters endpoint
+
+<kbd>
+  <img src="/media/Flow-setup2.png" width=300 />
+</kbd>
+
+
+Then, double click on the Splunk HEC step and map the inputs, pulling the token from the Constants section and the eventJSON from the Get Event Payload step like so:
+
+<kbd>
+  <img src="/media/Flow-setup3.png" width=300 />
+</kbd>
+
+On the Run Location tab, make the appropriate selection depending on how xMatters will access your Splunk environment. If you are running Splunk in the cloud or have an open firewall connection, then select Cloud. Otherwise, select an xMatters Agent that will have access to Splunk. 
+
+<kbd>
+  <img src="/media/Flow-setup3.5.png" width=300 />
+</kbd>
+
+
+On the endpoint tab, create a new endpoint called Splunk HEC and the Base URL will be the url of your Splunk hostname prefixed with input- and suffixed by :8088. For example, if your Splunk url is 
+`https://prd-p-cqzf26jjxqbp.cloud.splunk.com`
+Then, your Base URL is:
+`https://input-prd-p-cqzf26jjxqbp.cloud.splunk.com:8088`
+One last thing, for these new Splunk cloud instances, you will need to check the Trust Self Signed Certificates in the endpoint. Likely you won’t have to for a customer’s environment. 
+Altogether, it should look like this:
+
+<kbd>
+  <img src="/media/Flow-setup4.png" width=300 />
+</kbd>
+
