@@ -92,6 +92,7 @@ Review and Submit. A token value will be displayed. Copy this value with care, i
 </kbd>
 
 ## Create Dashboard (optional)
+
 This step is for creating the default dashboard that can serve as an example on how to query for the Splunk data. 
 Navigate over to the Search & Reporting App in Splunk. Then find the Dashboards button and click Create New Dashboard
 
@@ -99,11 +100,14 @@ Navigate over to the Search & Reporting App in Splunk. Then find the Dashboards 
   <img src="/media/NewDashboard.png" width=600 />
 </kbd>
 
+
 Give it a good name and a description. Seriously, all your friends will thank you. Especially if you share the dashboard with them. 
+
 
 <kbd>
   <img src="/media/NewDashboard1.png" width=500 />
 </kbd>
+
 
 There is a helpful wizard for adding panels and such, but I took care of that for you. So just click the Source button, remove all the text there and paste in the [xMattersDashboard.xml](xMattersDashboard.xml) file. 
 
@@ -260,43 +264,47 @@ The design of these steps is such that using the event status trigger is best. T
 Drag the event status trigger, the get event payload step and the Splunk HEC step onto the canvas and hook them up in order:
 
 <kbd>
-  <img src="/media/Flow1.png" />
+  <img src="/media/Flow1.png" width=300 />
 </kbd>
 
 Then double click on the get events step and drag in the inputs like so:
 
 <kbd>
-  <img src="/media/Flow-setup1.png" width=300 />
+  <img src="/media/Flow-setup1.png" width=500 />
 </kbd>
 
 On the endpoint tab, select the xMatters endpoint
 
 <kbd>
-  <img src="/media/Flow-setup2.png" width=300 />
+  <img src="/media/Flow-setup2.png" width=500 />
 </kbd>
 
 
 Then, double click on the Splunk HEC step and map the inputs, pulling the token from the Constants section and the eventJSON from the Get Event Payload step like so:
 
 <kbd>
-  <img src="/media/Flow-setup3.png" width=300 />
+  <img src="/media/Flow-setup3.png" width=500 />
 </kbd>
 
 On the Run Location tab, make the appropriate selection depending on how xMatters will access your Splunk environment. If you are running Splunk in the cloud or have an open firewall connection, then select Cloud. Otherwise, select an xMatters Agent that will have access to Splunk. 
 
 <kbd>
-  <img src="/media/Flow-setup3.5.png" width=300 />
+  <img src="/media/Flow-setup3.5.png" width=500 />
 </kbd>
 
 
-On the endpoint tab, create a new endpoint called Splunk HEC and the Base URL will be the url of your Splunk hostname prefixed with input- and suffixed by :8088. For example, if your Splunk url is 
+On the endpoint tab, create a new endpoint called Splunk HEC and the Base URL will be the url of your Splunk hostname prefixed with input- and suffixed by :8088. 
+For example, if your Splunk url is 
+
 `https://prd-p-cqzf26jjxqbp.cloud.splunk.com`
+
 Then, your Base URL is:
+
 `https://input-prd-p-cqzf26jjxqbp.cloud.splunk.com:8088`
+
 One last thing, for these new Splunk cloud instances, you will need to check the Trust Self Signed Certificates in the endpoint. Likely you won’t have to for a customer’s environment. 
-Altogether, it should look like this:
 
 <kbd>
-  <img src="/media/Flow-setup4.png" width=300 />
+  <img src="/media/Flow-setup4.png" width=500 />
 </kbd>
 
