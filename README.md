@@ -185,7 +185,9 @@ On the Run Location tab, make the appropriate selection depending on how xMatter
 </kbd>
 
 
-On the endpoint tab, create a new endpoint called Splunk HEC and the Base URL will be the url of your Splunk hostname prefixed with input- and suffixed by :8088. 
+On the endpoint tab, create a new endpoint called Splunk HEC.
+The Base URL will depend on what flavor of Splunk you are using. Check the [Splunk docs](http://dev.splunk.com/view/event-collector/SP-CAAAE7G) for the latest updates and check with your Splunk admin to get the proper URL. 
+For **Splunk Cloud**, the Base URL will probably be the url of your Splunk hostname prefixed with input- and suffixed by :8088. 
 For example, if your Splunk url is 
 
 `https://prd-p-cqzf26jjxqbp.cloud.splunk.com`
@@ -194,7 +196,11 @@ Then, your Base URL is:
 
 `https://input-prd-p-cqzf26jjxqbp.cloud.splunk.com:8088`
 
-One last thing, it seems that Splunk cloud instances will need to check the Trust Self Signed Certificates in the endpoint. 
+For **Splunk Enterprise**, the Base URL will probably just be the Splunk URL, with the HEC Port. For example, `https://my.splunk.acme.com:8088`. 
+
+These are the base URLs, not the full url, so make sure not to append any type of path, unless you have some funky proxy stuff going on. 
+
+One last thing, if the HEC is listening on **http** and not **https**, you will need to check the Trust Self Signed Certificates in the endpoint. 
 
 <kbd>
   <img src="/media/Flow-setup4.png" width=500 />
