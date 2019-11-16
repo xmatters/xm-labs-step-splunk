@@ -25,7 +25,7 @@ Using the data sent from xMatters, you can build dashboards such as this one:
 # Splunk Setup
 ## Create xMatters Source Type 
 
-The source type is a way for Splunk to categorize and format the data being ingested. Customers likely won’t have a source type for xMatters data, so this will need to be done every time. Don’t worry, it isn’t complicated nor risky.  
+The source type is a way for Splunk to categorize and format the data being ingested.  
 
 Login to Splunk and click the Settings menu in the upper left, then head over to the Source Types. 
 
@@ -121,136 +121,19 @@ Clicking the Save button will execute the searches and display the results which
 
 # Flow Designer Steps
 
-## GET event payload
+## Import Steps
+The steps are packaged into the [SplunkHECSteps.zip](SplunkHECSteps.zip) workflow file making for easy importing. 
 
-### Settings
+1. Login to xMatters and navigate to the Workflow tab. 
+2. Click the Import button and import the [SplunkHECSteps.zip](SplunkHECSteps.zip) file. 
 
-The triggers don’t have all the data we want to send to Splunk, so we’re going to use the xM API to get the event. So, we’ll create a step that accepts 1 input, the event UUID, and has 2 outputs, one for the JSON string of the event ready for dropping into Splunk and the other for a status code in case we wanted to catch a failure. 
+The workflow contains two steps:
+* `xM - Get event details` which is used to retrieve details of the event
+* `Splunk HEC` which is used to send data to Splunk
 
-In the canvas, click Create a custom action and give it a useful name like **GET event payload**. Add the rest of the details like below. Note that we’ll be using the xMatters endpoint, which is marked as No Authentication in the backend apparently. 
+Both steps will be needed. 
 
-<kbd>
-  <img src="/media/GetEventPayload1.png" width=600 />
-</kbd>
-
-### Inputs
-
-Add an input for the eventID. The API accepts the UUID or the event ID, so we’ll just allow either. Note that nothing interesting will happen if we don’t pass this ID, so we mark it as required. 
-
-
-| Name  | Required? | Min | Max | Help Text | Default Value | Multiline |
-| ----- | ----------| --- | --- | --------- | ------------- | --------- |
-| eventID  | Yes | 0 | 2000 | The xMatters event ID or UUID to retrieve |  | No |
-
-### Outputs
-
-| Name |
-| ---- |
-| eventJSON |
-| statusCode |
-
-### Script
-Remove the default script and paste in all of this:
-
-```javascript
-
-// Build the request object and grab the properties and recipients
-var request = http.request({ 
-     "endpoint": "xMatters",
-     "path": "/api/xm/1/events/" + input['eventID'] + "?embed=properties,recipients,responseOptions,annotations",
-     "method": "GET"
- });
-
-var response = request.write();
-
-output['statusCode'] = response.statusCode;
-output['eventJSON']  = JSON.stringify( { "message": response.statusMessage } );
-
-if (response.statusCode == 200 ) {
-    json = JSON.parse(response.body);
-    console.log("Retrieved event: " + json.eventId + ". ID = " + json.id);
-    
-    eventJSON = JSON.parse( response.body );
-
-    // The audits endpoint has a timeline of all responses,
-    // not just the last one. 
-    request = http.request({ 
-        "endpoint": "xMatters",
-        "path": "/api/xm/1/audits?eventId=" + input['eventID'] + "&auditType=RESPONSE_RECEIVED",
-        "method": "GET"
-    });
-
-    response = request.write();
-    if( response.statusCode == 200 ){
-        eventJSON.audits = JSON.parse( response.body );
-    }
-    
-    output['eventJSON'] = JSON.stringify( eventJSON );
-}
-
-```
-
-
-## Splunk HEC
-This step is where we get to actually send the data out to Splunk. Create a new custom step called “Splunk HEC” like below. The logo file is attached in the email as splunk-thumb.png. Note again we select No Authentication as the endpoint type, but in this case it is because the token used to authenticate will be passed as an input. Also note that we select `Both` for the Run Location so that our users can execute this step in the Cloud or in an Agent depending on how xMatters will access Splunk.
-
-Splunk Logo available [here](SplunkLogo.png)
-
-<kbd>
-  <img src="/media/SplunkSettings.png" width=600 />
-</kbd>
-
-
-### Inputs
-
-| Name  | Required? | Min | Max | Help Text | Default Value | Multiline |
-| ----- | ----------| --- | --- | --------- | ------------- | --------- |
-| HEC Token | Yes | 0 | 2000 | The token for authenticating into the Splunk HTTP Event Collector | | |
-| Source Type | Yes | 0 | 2000 | The name of the Splunk source type for this data. | xmatters_events |
-| eventJSON | | 0 | 20000 | A string of the JSON response to the GET /event/UUID XMAPI call. | | |
-
-
-
-### Outputs
-
-| Name |
-| ---- |
-| Splunk Response |
-
-### Script
-
-```javascript
-
-// Build the Splunk request object. Note the Authorization header
-var request = http.request({ 
-    "endpoint": "Splunk",
-    "path": "/services/collector/event",
-    "method": "POST",
-    'headers': {
-        'Content-Type': 'application/json',
-        'Authorization': 'Splunk ' + input['HEC Token']
-    }
-});
-
-// Grab the event payload
-var eventJSON = JSON.parse( input['eventJSON'] );
-
-// Build the Splunk payload and mark it with the sourcetype
-var data = {
-    "sourcetype": input['Source Type'],
-    "event":      eventJSON
-};
-
-// Fire in the hole!
-var response = request.write( data );
-
-output['Splunk Response'] = response.statusCode;
-
-
-```
-
-
-# Constants
+## Constants
 Adding a constant to hold the token value means you don't have to type it in every time you want to use it. This way, you just drag the constant in as an input to the Splunk step. 
 Exit the flow designer and head over to the integration builder and click the **Edit Constants** button and paste in the value from above and hit **Save Changes**. 
 
@@ -261,7 +144,9 @@ Exit the flow designer and head over to the integration builder and click the **
 # Usage
 The design of these steps is such that using the event status trigger is best. This will ensure you have the initial event data as soon as it happens, and then **all** of the response and notification data. Using other triggers may be possible depending on what information you need to get and when. 
 
-Drag the event status trigger, the get event payload step and the Splunk HEC step onto the canvas and hook them up in order:
+The steps have been imported with the workflow, but as is they don't do anything interesting. They need to be added to a canvas to ship data from that canvas to Splunk. So open up your favorite canvas and drag the steps
+
+Add these to the event status trigger in this order:
 
 <kbd>
   <img src="/media/Flow1.png" width=400 />
@@ -280,11 +165,18 @@ On the endpoint tab, select the xMatters endpoint
 </kbd>
 
 
-Then, double click on the Splunk HEC step and map the inputs, pulling the token from the Constants section and the eventJSON from the Get Event Payload step like so:
+Then, double click on the Splunk HEC step and map the inputs, pulling the token from the Constants section and the eventJSON from the Get Event Payload step like so. 
 
 <kbd>
   <img src="/media/Flow-setup3.png" width=600 />
 </kbd>
+
+Make sure to drag all of the eventJSON properties to the corresponding input. (Each property in the stream can handle a max of 20,000 characters, but an event can be more than 20,000 so we break it up into chunks of 20,000. If an event is more than 80,000 characters an error will be thrown and you should add more inputs as appropriate.)
+
+<kbd>
+  <img src="/media/Flow-setup3.2.png" width=600 />
+</kbd>
+
 
 On the Run Location tab, make the appropriate selection depending on how xMatters will access your Splunk environment. If you are running Splunk in the cloud or have an open firewall connection, then select Cloud. Otherwise, select an xMatters Agent that will have access to Splunk. 
 
@@ -302,7 +194,7 @@ Then, your Base URL is:
 
 `https://input-prd-p-cqzf26jjxqbp.cloud.splunk.com:8088`
 
-One last thing, for these new Splunk cloud instances, you will need to check the Trust Self Signed Certificates in the endpoint. Likely you won’t have to for a customer’s environment. 
+One last thing, it seems that Splunk cloud instances will need to check the Trust Self Signed Certificates in the endpoint. 
 
 <kbd>
   <img src="/media/Flow-setup4.png" width=500 />
