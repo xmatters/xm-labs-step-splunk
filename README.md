@@ -19,6 +19,7 @@ Using the data sent from xMatters, you can build dashboards such as this one:
 
 # Files
 
+* [SplunkHECStepsv2.zip](SplunkHECStepsv2.zip) - Workflow zip file containing the steps.
 * [xMattersDashboard.xml](xMattersDashboard.xml) - Example dashboard XML file 
 * [SplunkLogo.png](SplunkLogo.png) - Logo for the Splunk step
 
@@ -122,10 +123,10 @@ Clicking the Save button will execute the searches and display the results which
 # Flow Designer Steps
 
 ## Import Steps
-The steps are packaged into the [SplunkHECSteps.zip](SplunkHECSteps.zip) workflow file making for easy importing. 
+The steps are packaged into the [SplunkHECStepsv2.zip](SplunkHECStepsv2.zip) workflow file making for easy importing. 
 
 1. Login to xMatters and navigate to the Workflow tab. 
-2. Click the Import button and import the [SplunkHECSteps.zip](SplunkHECSteps.zip) file. 
+2. Click the Import button and import the [SplunkHECStepsv2.zip](SplunkHECStepsv2.zip) file. 
 
 The workflow contains two steps:
 * `xM - Get event details` which is used to retrieve details of the event
@@ -206,3 +207,5 @@ One last thing, if the HEC is listening on **http** and not **https**, you will 
   <img src="/media/Flow-setup4.png" width=500 />
 </kbd>
 
+# Notes
+The flow designer has a maximum number of characters for inputs and outputs of 20,000, but the event payloads will often be larger than this. So we break the payload up into many chunks. The number of chunks is defined in the `MAX_CHUNKS` parameter and if altered, needs to be altered in the Get Event input as well as the Splunk HEC input. Additionally, the number of `eventJSON` outputs in the Get Event step and the `eventJSON` inputs in the Splunk HEC step will need to match this `MAX_CHUNKS` value. 
