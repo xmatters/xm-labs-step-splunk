@@ -5,8 +5,8 @@
       <title>Active Events</title>
       <single>
         <search>
-          <query>sourcetype="xmatters_events" | spath status | search status=ACTIVE
-[search sourcetype="xmatters_events" | stats count by id | where count=1 | fields id] 
+          <query>index=xmatters | spath trigger_type | search trigger_type=ACTIVE
+[search index=xmatters | stats count by id | where count=1 | fields id] 
 | stats count as "Active Events"</query>
           <earliest>$earliest$</earliest>
           <latest>$latest$</latest>
@@ -22,7 +22,7 @@
       <title>Events by Form</title>
       <chart>
         <search>
-          <query>sourcetype="xmatters_events" | spath status | search (status="TERMINATED" OR status="TERMINATED_EXTERNAL")
+          <query>index=xmatters | spath status | search status="TERMINATED"
 | rename "form.name" AS form
 | chart count BY form</query>
           <earliest>-30d@d</earliest>
@@ -32,9 +32,8 @@
         <option name="charting.axisLabelsX.majorLabelStyle.rotation">-45</option>
         <option name="charting.chart">pie</option>
         <option name="charting.drilldown">all</option>
-        <option name="refresh.display">progressbar</option>
         <drilldown>
-          <link target="_blank">search?q=sourcetype="xmatters_events" status="ACTIVE"  | rename "recipients.data{}.targetName" AS targetName  | rename "form.name" AS form | search form="$row.form$" | table eventId, id, form, targetName, name, "submitter.targetName"&amp;earliest=$earliest$&amp;latest=$latest$</link>
+          <link target="_blank">search?q=index=xmatters status="ACTIVE"  | rename "recipients.data{}.targetName" AS targetName  | rename "form.name" AS form | search form="$row.form$" | table eventId, id, form, targetName, name, "submitter.targetName"&amp;earliest=$earliest$&amp;latest=$latest$</link>
         </drilldown>
       </chart>
     </panel>
@@ -44,19 +43,18 @@
       <title>Number of events by targeted recipient</title>
       <chart>
         <search>
-          <query>sourcetype="xmatters_events" | spath status | search status="TERMINATED" OR status="TERMINATED_EXTERNAL"
-| rename "recipients.data{}.targeted" AS targeted
+          <query>index=xmatters | spath status | search status="ACTIVE"
 | rename "recipients.data{}.targetName" AS targetName 
 | rename "recipients.data{}.recipientType" AS recipientType 
-| eval x=mvzip( recipientType, mvzip( targetName, targeted ) ) 
+| rename "recipients.data{}.targeted" AS targeted
+| eval x=mvzip( recipientType, targetName, ";;" )
+| eval x=mvzip( x, targeted, ";;" )
 | mvexpand x 
-| eval x=split( x, "," )
-| eval recipientType=mvindex(x,0) 
-| eval targetName=mvindex(x,1) 
-| eval targeted=mvindex( x,2 )
-| where recipientType!="DEVICE"
-| where targeted="true"
-| chart count by targetName</query>
+| eval y=split( x, ";;" )
+| eval recipientType=mvindex(y,0) 
+| eval targetName=mvindex(y,1) 
+| where recipientType = "GROUP" and targeted="true"
+| chart count BY targetName</query>
           <earliest>-30d@d</earliest>
           <latest>now</latest>
         </search>
@@ -65,7 +63,7 @@
         <option name="charting.drilldown">all</option>
         <option name="refresh.display">progressbar</option>
         <drilldown>
-          <link target="_blank">search?q=sourcetype="xmatters_events" status="ACTIVE"  | rename "recipients.data{}.targetName" AS targetName  | rename "recipients.data{}.recipientType" AS recipientType  | eval x=mvzip( recipientType, targetName )  | mvexpand x  | eval x=split( x, "," ) | eval recipientType=mvindex(x,0)  | eval targetName=mvindex(x,1)  | where recipientType!="DEVICE" | search targetName="$row.targetName$" | table eventId, id, form, targetName, name, "submitter.targetName"&amp;earliest=&amp;latest=</link>
+          <link target="_blank">search?q=index=xmatters status="ACTIVE"  | rename "recipients.data{}.targetName" AS targetName  | rename "recipients.data{}.recipientType" AS recipientType  | eval x=mvzip( recipientType, targetName )  | mvexpand x  | eval x=split( x, "," ) | eval recipientType=mvindex(x,0)  | eval targetName=mvindex(x,1)  | where recipientType!="DEVICE" | search targetName="$row.targetName$" | table eventId, id, form, targetName, name, "submitter.targetName"&amp;earliest=&amp;latest=</link>
         </drilldown>
       </chart>
     </panel>
@@ -73,7 +71,7 @@
       <title>Number of events by resolved recipient</title>
       <chart>
         <search>
-          <query>sourcetype="xmatters_events" | spath status | search status="TERMINATED" OR status="TERMINATED_EXTERNAL"
+          <query>index=xmatters | spath status | search status="TERMINATED" 
 | rename "recipients.data{}.targeted" AS targeted
 | rename "recipients.data{}.targetName" AS targetName 
 | rename "recipients.data{}.recipientType" AS recipientType 
@@ -85,13 +83,12 @@
 | eval targeted=mvindex( x,2 )
 | where recipientType!="DEVICE" 
 | where targeted="false"
-| chart count by targetName</query>
+| chart count BY targetName</query>
           <earliest>-30d@d</earliest>
           <latest>now</latest>
         </search>
         <option name="charting.chart">pie</option>
         <option name="charting.drilldown">none</option>
-        <option name="refresh.display">progressbar</option>
       </chart>
     </panel>
   </row>
@@ -100,7 +97,7 @@
       <title>Events per Day</title>
       <chart>
         <search>
-          <query>sourcetype="xmatters_events" | spath status | search status="TERMINATED" OR status="TERMINATED_EXTERNAL" | timechart span=1d count as evts | eval evts = if(isnull(evts),0,evts) | rename evts AS "Num Events"</query>
+          <query>index=xmatters | spath status | search status="TERMINATED" | timechart span=1d count as evts | eval evts = if(isnull(evts),0,evts) | rename evts AS "Num Events"</query>
           <earliest>-30d@d</earliest>
           <latest>now</latest>
           <refresh>10m</refresh>
@@ -110,7 +107,6 @@
         <option name="charting.chart.nullValueMode">gaps</option>
         <option name="charting.chart.showDataLabels">all</option>
         <option name="charting.drilldown">none</option>
-        <option name="refresh.display">progressbar</option>
       </chart>
     </panel>
   </row>
@@ -119,40 +115,20 @@
       <title>Average Response Time</title>
       <chart>
         <search>
-          <query>sourcetype="xmatters_events"
-   | spath status
-   | search (status="TERMINATED" OR status="TERMINATED_EXTERNAL" )
- 
-   | spath created
-   | rename "audits.data{}.at" AS received
-   | rename "audits.data{}.response.notification.recipient.owner.targetName" AS targetName
-   | rename "audits.data{}.auditType" AS auditType
-   | rename "audits.data{}.response.response" AS response
- 
-   | search auditType = "RESPONSE_RECEIVED"
-   
-   | eval x = mvzip( created, mvzip( received, mvzip( targetName, mvzip( auditType, response ) ) ) )
-   | mvexpand x
-   | eval x = split( x, "," )
-   | eval created    = mvindex(x, 0)
-   | eval received   = mvindex(x, 1)
-   | eval targetName = mvindex(x, 2)
-   | eval auditType  = mvindex(x, 3)
-   | eval response   = mvindex(x, 4)
- 
-   | eval start = strptime( created,  "%Y-%m-%dT%H:%M:%S.%N" )
-   | eval end   = strptime( received, "%Y-%m-%dT%H:%M:%S.%N" )
-   
-   | eval difference = end - start
-   
-   | chart eval(round(avg(difference),2)) AS "Average Time to Respond" BY targetName</query>
+          <query>index=xmatters | spath trigger_type | search trigger_type="RESPONSE" 
+   | spath created 
+   | eval start = strptime( created, "%Y-%m-%dT%H:%M:%S.%N" ) 
+   | spath response_time
+   | eval end = strptime( response_time, "%Y-%m-%dT%H:%M:%S.%N" )
+   | eval difference = end - start 
+   | spath response_targetName
+   | chart eval(round(avg(difference),2)) AS "Average Time to Respond" BY response_targetName</query>
           <earliest>0</earliest>
           <latest></latest>
         </search>
         <option name="charting.chart">bar</option>
         <option name="charting.drilldown">none</option>
         <option name="charting.legend.placement">none</option>
-        <option name="refresh.display">progressbar</option>
       </chart>
     </panel>
   </row>
